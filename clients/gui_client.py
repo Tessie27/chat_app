@@ -1,6 +1,7 @@
 """
 GUI Chat Client using Tkinter
 """
+
 import tkinter as tk
 from tkinter import scrolledtext, simpledialog, messagebox
 import socket
@@ -25,6 +26,7 @@ BLUE = "#58a6ff"
 RED = "#f85149"
 PINK = "#ff7eb3"
 
+
 class ConnectDialog(tk.Toplevel):
     def __init__(self, parent, saved_config=None):
         super().__init__(parent)
@@ -41,8 +43,13 @@ class ConnectDialog(tk.Toplevel):
     def _build(self):
         pad = dict(padx=14, pady=6)
 
-        tk.Label(self, text="Connect to Secure Chat", font=("Segoe UI", 14, "bold"),
-                 bg=BG, fg=FG).grid(row=0, column=0, columnspan=2, pady=(16, 10), padx=16)
+        tk.Label(
+            self,
+            text="Connect to Secure Chat",
+            font=("Segoe UI", 14, "bold"),
+            bg=BG,
+            fg=FG,
+        ).grid(row=0, column=0, columnspan=2, pady=(16, 10), padx=16)
 
         fields = [
             ("Username", "username", self.saved_config.get("username", "")),
@@ -53,44 +60,91 @@ class ConnectDialog(tk.Toplevel):
         ]
         self.vars = {}
         self.entries = {}
-        
+
         for i, (label, key, default) in enumerate(fields, start=1):
-            tk.Label(self, text=label, font=("Segoe UI", 11),
-                     bg=BG, fg=FG_DIM, anchor="e", width=10).grid(
-                row=i, column=0, **pad)
-            
+            tk.Label(
+                self,
+                text=label,
+                font=("Segoe UI", 11),
+                bg=BG,
+                fg=FG_DIM,
+                anchor="e",
+                width=10,
+            ).grid(row=i, column=0, **pad)
+
             var = tk.StringVar(value=default)
             self.vars[key] = var
-            
+
             if key == "password":
-                entry = tk.Entry(self, textvariable=var, font=("Segoe UI", 11),
-                               bg=BG3, fg=FG, insertbackground=FG, relief="flat",
-                               highlightbackground=BORDER, highlightthickness=1,
-                               width=24, show="*")
+                entry = tk.Entry(
+                    self,
+                    textvariable=var,
+                    font=("Segoe UI", 11),
+                    bg=BG3,
+                    fg=FG,
+                    insertbackground=FG,
+                    relief="flat",
+                    highlightbackground=BORDER,
+                    highlightthickness=1,
+                    width=24,
+                    show="*",
+                )
             else:
-                entry = tk.Entry(self, textvariable=var, font=("Segoe UI", 11),
-                               bg=BG3, fg=FG, insertbackground=FG, relief="flat",
-                               highlightbackground=BORDER, highlightthickness=1,
-                               width=24)
+                entry = tk.Entry(
+                    self,
+                    textvariable=var,
+                    font=("Segoe UI", 11),
+                    bg=BG3,
+                    fg=FG,
+                    insertbackground=FG,
+                    relief="flat",
+                    highlightbackground=BORDER,
+                    highlightthickness=1,
+                    width=24,
+                )
             entry.grid(row=i, column=1, **pad)
             self.entries[key] = entry
 
         # Save password checkbox
         self.save_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(self, text="Save credentials locally", variable=self.save_var,
-                      bg=BG, fg=FG, selectcolor=BG, activebackground=BG,
-                      font=("Segoe UI", 10)).grid(
-            row=len(fields)+1, column=0, columnspan=2, pady=(0, 10))
+        tk.Checkbutton(
+            self,
+            text="Save credentials locally",
+            variable=self.save_var,
+            bg=BG,
+            fg=FG,
+            selectcolor=BG,
+            activebackground=BG,
+            font=("Segoe UI", 10),
+        ).grid(row=len(fields) + 1, column=0, columnspan=2, pady=(0, 10))
 
         btn_frame = tk.Frame(self, bg=BG)
-        btn_frame.grid(row=len(fields)+2, column=0, columnspan=2, pady=(8, 16))
-        
-        tk.Button(btn_frame, text="Connect", font=("Segoe UI", 11, "bold"),
-                  bg=GREEN, fg=BG, relief="flat", padx=20, pady=6,
-                  cursor="hand2", command=self._connect).pack(side="left", padx=6)
-        tk.Button(btn_frame, text="Cancel", font=("Segoe UI", 11),
-                  bg=BG3, fg=FG, relief="flat", padx=16, pady=6,
-                  cursor="hand2", command=self.destroy).pack(side="left", padx=6)
+        btn_frame.grid(row=len(fields) + 2, column=0, columnspan=2, pady=(8, 16))
+
+        tk.Button(
+            btn_frame,
+            text="Connect",
+            font=("Segoe UI", 11, "bold"),
+            bg=GREEN,
+            fg=BG,
+            relief="flat",
+            padx=20,
+            pady=6,
+            cursor="hand2",
+            command=self._connect,
+        ).pack(side="left", padx=6)
+        tk.Button(
+            btn_frame,
+            text="Cancel",
+            font=("Segoe UI", 11),
+            bg=BG3,
+            fg=FG,
+            relief="flat",
+            padx=16,
+            pady=6,
+            cursor="hand2",
+            command=self.destroy,
+        ).pack(side="left", padx=6)
 
         self.bind("<Return>", lambda e: self._connect())
 
@@ -100,19 +154,20 @@ class ConnectDialog(tk.Toplevel):
             save_config("last_connection.json", self.result)
         self.destroy()
 
+
 class ChatClient(tk.Tk, ChatClientBase):
     def __init__(self):
         tk.Tk.__init__(self)
         ChatClientBase.__init__(self)
-        
+
         self.title("Secure Chat")
         self.geometry("900x620")
         self.minsize(700, 480)
         self.configure(bg=BG)
-        
+
         self.pm_target = None
         self.saved_config = load_config("last_connection.json")
-        
+
         self._build_ui()
         self.after(100, self._prompt_connect)
         self.protocol("WM_DELETE_WINDOW", self._on_closing)
@@ -122,81 +177,154 @@ class ChatClient(tk.Tk, ChatClientBase):
         top = tk.Frame(self, bg=BG2, highlightbackground=BORDER, highlightthickness=1)
         top.pack(fill="x")
 
-        self.title_lbl = tk.Label(top, text="Secure Chat", font=("Segoe UI", 13, "bold"),
-                                  bg=BG2, fg=FG, padx=16, pady=8)
+        self.title_lbl = tk.Label(
+            top,
+            text="Secure Chat",
+            font=("Segoe UI", 13, "bold"),
+            bg=BG2,
+            fg=FG,
+            padx=16,
+            pady=8,
+        )
         self.title_lbl.pack(side="left")
 
-        self.room_lbl = tk.Label(top, text="", font=("Segoe UI", 11),
-                                 bg=BG2, fg=BLUE, padx=8)
+        self.room_lbl = tk.Label(
+            top, text="", font=("Segoe UI", 11), bg=BG2, fg=BLUE, padx=8
+        )
         self.room_lbl.pack(side="left")
 
-        self.conn_lbl = tk.Label(top, text="Not connected", font=("Segoe UI", 10),
-                                 bg=BG2, fg=RED, padx=16)
+        self.conn_lbl = tk.Label(
+            top, text="Not connected", font=("Segoe UI", 10), bg=BG2, fg=RED, padx=16
+        )
         self.conn_lbl.pack(side="right")
 
-        tk.Button(top, text="Connect", font=("Segoe UI", 10),
-                  bg=BG3, fg=FG, relief="flat", padx=10, pady=4,
-                  cursor="hand2", command=self._prompt_connect).pack(side="right", padx=(0, 6))
+        tk.Button(
+            top,
+            text="Connect",
+            font=("Segoe UI", 10),
+            bg=BG3,
+            fg=FG,
+            relief="flat",
+            padx=10,
+            pady=4,
+            cursor="hand2",
+            command=self._prompt_connect,
+        ).pack(side="right", padx=(0, 6))
 
         # Main area
         main = tk.Frame(self, bg=BG)
         main.pack(fill="both", expand=True)
 
         # Sidebar
-        sidebar = tk.Frame(main, bg=BG2, width=180,
-                           highlightbackground=BORDER, highlightthickness=1)
+        sidebar = tk.Frame(
+            main, bg=BG2, width=180, highlightbackground=BORDER, highlightthickness=1
+        )
         sidebar.pack(side="right", fill="y")
         sidebar.pack_propagate(False)
 
         # Rooms section
-        tk.Label(sidebar, text="ROOMS", font=("Segoe UI", 9, "bold"),
-                 bg=BG2, fg=FG_DIM, anchor="w").pack(fill="x", padx=12, pady=(12, 4))
+        tk.Label(
+            sidebar,
+            text="ROOMS",
+            font=("Segoe UI", 9, "bold"),
+            bg=BG2,
+            fg=FG_DIM,
+            anchor="w",
+        ).pack(fill="x", padx=12, pady=(12, 4))
 
         self.room_list = tk.Listbox(
-            sidebar, font=("Segoe UI", 11), bg=BG2, fg=FG,
-            selectbackground=BG3, selectforeground=BLUE,
-            relief="flat", highlightthickness=0, bd=0,
-            activestyle="none"
+            sidebar,
+            font=("Segoe UI", 11),
+            bg=BG2,
+            fg=FG,
+            selectbackground=BG3,
+            selectforeground=BLUE,
+            relief="flat",
+            highlightthickness=0,
+            bd=0,
+            activestyle="none",
         )
         self.room_list.pack(fill="x", padx=8)
         self.room_list.bind("<Double-Button-1>", self._switch_room)
 
         room_btns = tk.Frame(sidebar, bg=BG2)
         room_btns.pack(fill="x", padx=8, pady=(4, 8))
-        tk.Button(room_btns, text="Join", font=("Segoe UI", 9),
-                  bg=BG3, fg=FG, relief="flat", padx=8, pady=2,
-                  cursor="hand2", command=self._join_room).pack(side="left", padx=(0, 4))
-        tk.Button(room_btns, text="New", font=("Segoe UI", 9),
-                  bg=BG3, fg=FG, relief="flat", padx=8, pady=2,
-                  cursor="hand2", command=self._create_room).pack(side="left")
+        tk.Button(
+            room_btns,
+            text="Join",
+            font=("Segoe UI", 9),
+            bg=BG3,
+            fg=FG,
+            relief="flat",
+            padx=8,
+            pady=2,
+            cursor="hand2",
+            command=self._join_room,
+        ).pack(side="left", padx=(0, 4))
+        tk.Button(
+            room_btns,
+            text="New",
+            font=("Segoe UI", 9),
+            bg=BG3,
+            fg=FG,
+            relief="flat",
+            padx=8,
+            pady=2,
+            cursor="hand2",
+            command=self._create_room,
+        ).pack(side="left")
 
         # Divider
         tk.Frame(sidebar, bg=BORDER, height=1).pack(fill="x", padx=8, pady=4)
 
         # Users section
-        tk.Label(sidebar, text="ONLINE", font=("Segoe UI", 9, "bold"),
-                 bg=BG2, fg=FG_DIM, anchor="w").pack(fill="x", padx=12, pady=(4, 4))
+        tk.Label(
+            sidebar,
+            text="ONLINE",
+            font=("Segoe UI", 9, "bold"),
+            bg=BG2,
+            fg=FG_DIM,
+            anchor="w",
+        ).pack(fill="x", padx=12, pady=(4, 4))
 
         self.user_list = tk.Listbox(
-            sidebar, font=("Segoe UI", 11), bg=BG2, fg=GREEN,
-            selectbackground=BG3, relief="flat",
-            highlightthickness=0, bd=0, activestyle="none"
+            sidebar,
+            font=("Segoe UI", 11),
+            bg=BG2,
+            fg=GREEN,
+            selectbackground=BG3,
+            relief="flat",
+            highlightthickness=0,
+            bd=0,
+            activestyle="none",
         )
         self.user_list.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         self.user_list.bind("<Double-Button-1>", self._start_private)
 
-        tk.Label(sidebar, text="Double-click user to DM", font=("Segoe UI", 8),
-                 bg=BG2, fg=FG_DIM).pack(padx=8, pady=(0, 8))
+        tk.Label(
+            sidebar,
+            text="Double-click user to DM",
+            font=("Segoe UI", 8),
+            bg=BG2,
+            fg=FG_DIM,
+        ).pack(padx=8, pady=(0, 8))
 
         # Chat area
         chat_area = tk.Frame(main, bg=BG)
         chat_area.pack(side="left", fill="both", expand=True)
 
         self.output = scrolledtext.ScrolledText(
-            chat_area, font=("Segoe UI", 11), bg=BG, fg=FG,
-            relief="flat", wrap="word", padx=14, pady=10,
-            state="disabled", selectbackground=BG3,
-            insertbackground=FG
+            chat_area,
+            font=("Segoe UI", 11),
+            bg=BG,
+            fg=FG,
+            relief="flat",
+            wrap="word",
+            padx=14,
+            pady=10,
+            state="disabled",
+            selectbackground=BG3,
+            insertbackground=FG,
         )
         self.output.pack(fill="both", expand=True)
 
@@ -205,34 +333,52 @@ class ChatClient(tk.Tk, ChatClientBase):
         self.output.tag_config("name", foreground=BLUE, font=("Segoe UI", 11, "bold"))
         self.output.tag_config("self", foreground=GREEN, font=("Segoe UI", 11, "bold"))
         self.output.tag_config("msg", foreground=FG)
-        self.output.tag_config("system", foreground=FG_DIM, font=("Segoe UI", 10, "italic"))
-        self.output.tag_config("private", foreground=PINK, font=("Segoe UI", 11, "bold"))
+        self.output.tag_config(
+            "system", foreground=FG_DIM, font=("Segoe UI", 10, "italic")
+        )
+        self.output.tag_config(
+            "private", foreground=PINK, font=("Segoe UI", 11, "bold")
+        )
         self.output.tag_config("pm_msg", foreground=PINK)
         self.output.tag_config("err", foreground=RED)
 
         # Input row
-        input_row = tk.Frame(chat_area, bg=BG2,
-                             highlightbackground=BORDER, highlightthickness=1)
+        input_row = tk.Frame(
+            chat_area, bg=BG2, highlightbackground=BORDER, highlightthickness=1
+        )
         input_row.pack(fill="x")
 
-        self.pm_label = tk.Label(input_row, text="", font=("Segoe UI", 10),
-                                 bg=BG2, fg=PINK)
+        self.pm_label = tk.Label(
+            input_row, text="", font=("Segoe UI", 10), bg=BG2, fg=PINK
+        )
         self.pm_label.pack(side="left", padx=(10, 0))
 
         self.input_var = tk.StringVar()
         self.input_box = tk.Entry(
-            input_row, textvariable=self.input_var,
-            font=("Segoe UI", 12), bg=BG2, fg=FG,
-            insertbackground=FG, relief="flat",
-            highlightthickness=0
+            input_row,
+            textvariable=self.input_var,
+            font=("Segoe UI", 12),
+            bg=BG2,
+            fg=FG,
+            insertbackground=FG,
+            relief="flat",
+            highlightthickness=0,
         )
         self.input_box.pack(side="left", fill="x", expand=True, padx=10, pady=10)
         self.input_box.bind("<Return>", lambda e: self._send_message())
 
-        tk.Button(input_row, text="Send", font=("Segoe UI", 11, "bold"),
-                  bg=GREEN, fg=BG, relief="flat",
-                  padx=16, pady=6, cursor="hand2",
-                  command=self._send_message).pack(side="right", padx=(0, 10))
+        tk.Button(
+            input_row,
+            text="Send",
+            font=("Segoe UI", 11, "bold"),
+            bg=GREEN,
+            fg=BG,
+            relief="flat",
+            padx=16,
+            pady=6,
+            cursor="hand2",
+            command=self._send_message,
+        ).pack(side="right", padx=(0, 10))
 
     def _prompt_connect(self):
         if self.sock:
@@ -242,7 +388,9 @@ class ChatClient(tk.Tk, ChatClientBase):
             return
         r = dialog.result
         try:
-            self.connect(r["host"], int(r["port"]), r["username"], r["room"], r["password"])
+            self.connect(
+                r["host"], int(r["port"]), r["username"], r["room"], r["password"]
+            )
         except Exception as e:
             messagebox.showerror("Connection Error", str(e))
 
@@ -261,7 +409,7 @@ class ChatClient(tk.Tk, ChatClientBase):
 
     def on_message(self, packet):
         ptype = packet.get("type")
-        
+
         if ptype in ("message", "private", "system"):
             self._render(packet)
         elif ptype == "user_list":
@@ -396,9 +544,11 @@ class ChatClient(tk.Tk, ChatClientBase):
         self.disconnect()
         self.destroy()
 
+
 def main():
     app = ChatClient()
     app.mainloop()
+
 
 if __name__ == "__main__":
     main()

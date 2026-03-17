@@ -1,6 +1,7 @@
 """
 Chat Server with encryption support
 """
+
 import socket
 import threading
 import json
@@ -14,8 +15,10 @@ HOST = "0.0.0.0"
 DEFAULT_PORT = 5555
 BUFFER = 4096
 
+
 def log(msg):
     print(f"[{ts()}] {msg}")
+
 
 class Room:
     def __init__(self, name):
@@ -49,14 +52,15 @@ class Room:
         if len(self.history) > 50:
             self.history.pop(0)
 
+
 class Server:
     def __init__(self, port, password=None):
         self.port = port
         self.password = password
         self.crypto = SecureProtocol(password) if password else None
-        self.clients = {}       # socket -> {username, room}
-        self.rooms = {}         # name -> Room
-        self.auth_tokens = {}   # token -> username
+        self.clients = {}  # socket -> {username, room}
+        self.rooms = {}  # name -> Room
+        self.auth_tokens = {}  # token -> username
         self.lock = threading.Lock()
         self._get_room("General")  # default room
 
@@ -80,9 +84,7 @@ class Server:
                 conn, addr = server_sock.accept()
                 log(f"New connection from {addr[0]}:{addr[1]}")
                 threading.Thread(
-                    target=self._handle_client,
-                    args=(conn, addr),
-                    daemon=True
+                    target=self._handle_client, args=(conn, addr), daemon=True
                 ).start()
             except KeyboardInterrupt:
                 log("Server shutting down.")
@@ -97,13 +99,13 @@ class Server:
                 # Send challenge
                 challenge = secrets.token_hex(16)
                 send(sock, {"type": "auth_challenge", "challenge": challenge})
-                
+
                 # Receive response
                 response = recv(sock)
                 if not response or response.get("type") != "auth_response":
                     sock.close()
                     return
-                
+
                 # Verify password hash
                 expected = hashlib.sha256(
                     (challenge + self.password).encode()
@@ -112,12 +114,12 @@ class Server:
                     send(sock, {"type": "error", "msg": "Invalid password"})
                     sock.close()
                     return
-                
+
                 # Generate auth token
                 token = secrets.token_urlsafe(32)
                 self.auth_tokens[token] = response.get("username")
                 send(sock, {"type": "auth_success", "token": token})
-            
+
             # Expect a JOIN packet
             packet = recv(sock, self.crypto)
             if not packet or packet.get("type") != "join":
@@ -144,7 +146,13 @@ class Server:
                     for c in self.clients.values()
                 )
                 if taken:
-                    send(sock, {"type": "error", "msg": f"Username '{username}' is already taken."})
+                    send(
+                        sock,
+                        {
+                            "type": "error",
+                            "msg": f"Username '{username}' is already taken.",
+                        },
+                    )
                     sock.close()
                     return
 
@@ -155,12 +163,15 @@ class Server:
             log(f"{username} joined #{room_name} from {addr[0]}")
 
             # Confirm join + send history + user list
-            send(sock, {
-                "type": "joined",
-                "room": room_name,
-                "users": room.user_list(),
-                "history": room.history,
-            })
+            send(
+                sock,
+                {
+                    "type": "joined",
+                    "room": room_name,
+                    "users": room.user_list(),
+                    "history": room.history,
+                },
+            )
 
             # Announce to room
             announce = {
@@ -225,17 +236,23 @@ class Server:
             sender = self.clients.get(sock, {}).get("username", "?")
             target_name = packet.get("to", "").strip()
             target_sock = next(
-                (s for s, c in self.clients.items()
-                 if c["username"].lower() == target_name.lower()),
-                None
+                (
+                    s
+                    for s, c in self.clients.items()
+                    if c["username"].lower() == target_name.lower()
+                ),
+                None,
             )
 
         if not target_sock:
-            send(sock, {
-                "type": "system",
-                "msg": f"User '{target_name}' not found.",
-                "ts": ts(),
-            })
+            send(
+                sock,
+                {
+                    "type": "system",
+                    "msg": f"User '{target_name}' not found.",
+                    "ts": ts(),
+                },
+            )
             return
 
         out = {
@@ -274,12 +291,15 @@ class Server:
 
         log(f"{username} switched to #{new_room_name}")
 
-        send(sock, {
-            "type": "switched",
-            "room": new_room_name,
-            "users": new_room.user_list(),
-            "history": new_room.history,
-        })
+        send(
+            sock,
+            {
+                "type": "switched",
+                "room": new_room_name,
+                "users": new_room.user_list(),
+                "history": new_room.history,
+            },
+        )
 
         join_msg = {
             "type": "system",
@@ -295,19 +315,24 @@ class Server:
         if name:
             with self.lock:
                 self._get_room(name)
-            send(sock, {
-                "type": "system",
-                "msg": f"Room #{name} is ready.",
-                "ts": ts(),
-            })
+            send(
+                sock,
+                {
+                    "type": "system",
+                    "msg": f"Room #{name} is ready.",
+                    "ts": ts(),
+                },
+            )
             self._send_room_list(sock)
 
     def _send_user_list(self, room):
-        room.broadcast({
-            "type": "user_list",
-            "users": room.user_list(),
-            "room": room.name,
-        })
+        room.broadcast(
+            {
+                "type": "user_list",
+                "users": room.user_list(),
+                "room": room.name,
+            }
+        )
 
     def _send_room_list(self, sock):
         with self.lock:

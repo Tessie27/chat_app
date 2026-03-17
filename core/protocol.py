@@ -1,6 +1,7 @@
 """
 Secure chat protocol with encryption
 """
+
 import json
 import hashlib
 import secrets
@@ -12,18 +13,20 @@ import os
 import socket
 from datetime import datetime
 
+
 def ts():
     return datetime.now().strftime("%H:%M:%S")
 
+
 class SecureProtocol:
     """Handles encrypted message exchange"""
-    
+
     def __init__(self, password=None):
         self.key = None
         self.cipher = None
         if password:
             self.derive_key(password)
-    
+
     def derive_key(self, password, salt=None):
         """Derive encryption key from password"""
         if not salt:
@@ -37,22 +40,27 @@ class SecureProtocol:
         key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
         self.cipher = Fernet(key)
         return salt
-    
+
     def encrypt_packet(self, data):
         """Encrypt packet data"""
-        if not hasattr(self, 'cipher') or self.cipher is None:
+        if not hasattr(self, "cipher") or self.cipher is None:
             return data  # No encryption
         json_str = json.dumps(data)
         encrypted = self.cipher.encrypt(json_str.encode())
         return {"type": "encrypted", "data": base64.b64encode(encrypted).decode()}
-    
+
     def decrypt_packet(self, packet):
         """Decrypt packet if encrypted"""
-        if packet.get("type") == "encrypted" and hasattr(self, 'cipher') and self.cipher:
+        if (
+            packet.get("type") == "encrypted"
+            and hasattr(self, "cipher")
+            and self.cipher
+        ):
             encrypted = base64.b64decode(packet["data"])
             decrypted = self.cipher.decrypt(encrypted)
             return json.loads(decrypted.decode())
         return packet
+
 
 # Enhanced send/recv with encryption
 def send(sock, data, crypto=None):
@@ -62,6 +70,7 @@ def send(sock, data, crypto=None):
     raw = json.dumps(data).encode()
     length = len(raw).to_bytes(4, "big")
     sock.sendall(length + raw)
+
 
 def recv(sock, crypto=None):
     """Receive data with optional decryption"""
@@ -76,6 +85,7 @@ def recv(sock, crypto=None):
     if crypto:
         data = crypto.decrypt_packet(data)
     return data
+
 
 def _recv_exact(sock, n):
     data = b""
